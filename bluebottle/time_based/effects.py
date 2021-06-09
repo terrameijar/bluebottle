@@ -157,6 +157,12 @@ class BaseActiveDurationsTransitionEffect(Effect):
     display = True
     template = 'admin/transition_durations.html'
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, BaseActiveDurationsTransitionEffect) and
+            self.instance == other.instance
+        )
+
     @classmethod
     def render(cls, effects):
         effect = effects[0]

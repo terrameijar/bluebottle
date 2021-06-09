@@ -362,6 +362,22 @@ class ParticipantStateMachine(ContributorStateMachine):
         automatic=True
     )
 
+    succeed = Transition(
+        accepted,
+        ContributorStateMachine.succeeded,
+        name=_('Succeed'),
+        description=_("Succeed this person as a participant to the activity."),
+        automatic=True
+    )
+
+    reaccept = Transition(
+        ContributorStateMachine.succeeded,
+        accepted,
+        name=_('Re-accept'),
+        description=_("Re-accept this person because the activity was re-opened."),
+        automatic=True
+    )
+
     reject = Transition(
         [
             ContributorStateMachine.new,
@@ -375,7 +391,7 @@ class ParticipantStateMachine(ContributorStateMachine):
 
     remove = Transition(
         [
-            accepted,
+            accepted, ContributorStateMachine.succeeded
         ],
         rejected,
         name=_('Remove'),
@@ -387,6 +403,7 @@ class ParticipantStateMachine(ContributorStateMachine):
     withdraw = Transition(
         [
             ContributorStateMachine.new,
+            ContributorStateMachine.succeeded,
             accepted
         ],
         withdrawn,

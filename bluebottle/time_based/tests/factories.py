@@ -67,6 +67,23 @@ class DateActivityFactory(TimeBasedFactory):
         factory_related_name='activity'
     )
 
+    @classmethod
+    def create(cls, **kwargs):
+        slots = []
+        if 'slots' in kwargs:
+            slots = kwargs['slots']
+            kwargs['slots'] = []
+
+        result = super().create(**kwargs)
+
+        for slot in slots:
+            DateActivitySlotFactory.create(
+                activity=result,
+                **slot
+            )
+
+        return result
+
 
 class PeriodActivityFactory(TimeBasedFactory):
     class Meta:

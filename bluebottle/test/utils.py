@@ -399,12 +399,17 @@ class TriggerTestCase(BluebottleTestCase):
     def create(self):
         self.model = self.factory.create(**self.defaults)
 
+    def build(self):
+        self.model = self.factory.build(**self.defaults)
+
     @contextmanager
     def execute(self, user=None):
         try:
             self.effects = self.model.execute_triggers(effects=None, user=user)
             yield self.effects
         finally:
+            self.model.save()
+            self.model = self.model.__class__.objects.get(pk=self.model.pk)
             self.effects = None
 
     def _hasTransitionEffect(self, transition, model=None):
