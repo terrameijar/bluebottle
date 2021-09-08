@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from builtins import object
 import importlib
-import itertools
 import logging
 import re
-from collections import namedtuple, defaultdict
+from builtins import object
+from collections import namedtuple
 
-from babel.numbers import get_currency_symbol, get_currency_name
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured
-from django.db import connection, ProgrammingError
+from django.db import connection
 from django.utils.translation import get_language
-from djmoney.contrib.exchange.exceptions import MissingRate
-from djmoney.contrib.exchange.models import get_rate
 from tenant_extras.utils import get_tenant_properties
 
 from bluebottle.clients import properties
@@ -81,40 +77,6 @@ def tenant_site():
     """ somewhat simulates the old 'Site' object """
     return namedtuple('Site', ['name', 'domain'])(tenant_name(),
                                                   connection.tenant.domain_url)
-
-
-def get_min_amounts(methods):
-    result = defaultdict(list)
-    for method in methods:
-        for currency, data in list(method['currencies'].items()):
-            result[currency].append(data.get('min_amount', 0))
-
-    return dict((currency, min(amounts)) for currency, amounts in list(result.items()))
-
-
-def get_currencies():
-    properties = get_tenant_properties()
-
-    currencies = set(itertools.chain(*[
-        list(method['currencies'].keys()) for method in properties.PAYMENT_METHODS
-    ]))
-    min_amounts = get_min_amounts(properties.PAYMENT_METHODS)
-
-    currencies = [{
-        'code': code,
-        'name': get_currency_name(code),
-        'symbol': get_currency_symbol(code).replace('US$', '$')
-    } for code in currencies]
-
-    for currency in currencies:
-        if currency['code'] in min_amounts:
-            currency['minAmount'] = min_amounts[currency['code']]
-        try:
-            currency['rate'] = get_rate(properties.DEFAULT_CURRENCY, currency['code'])
-        except (MissingRate, ProgrammingError):
-            currency['rate'] = 1
-
-    return currencies
 
 
 def get_user_site_links(user):
@@ -231,7 +193,6 @@ def get_public_properties(request):
         config = {
             'mediaUrl': getattr(properties, 'MEDIA_URL'),
             'defaultAvatarUrl': "/images/default-avatar.png",
-            'currencies': get_currencies(),
             'defaultCurrency': getattr(properties, 'DEFAULT_CURRENCY', 'EUR'),
             'logoUrl': "/images/logo.svg",
             'mapsApiKey': getattr(properties, 'MAPS_API_KEY', ''),
