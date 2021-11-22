@@ -330,6 +330,8 @@ class SlotParticipantInline(admin.TabularInline):
 class SlotAdmin(StateMachineAdmin):
 
     inlines = [SlotParticipantInline]
+    save_as = True
+    save_as_continue = True
 
     formfield_overrides = {
         models.DurationField: {
