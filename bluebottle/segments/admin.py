@@ -1,14 +1,19 @@
 from django import forms
+from django.conf.urls import url
 from django.contrib import admin
 from django.db import connection
 from django.forms.models import ModelFormMetaclass
+from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.template import loader
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django_better_admin_arrayfield.admin.mixins import DynamicArrayMixin
 from django_summernote.widgets import SummernoteWidget
 
+from bluebottle.bluebottle_dashboard.decorators import confirmation_form
 from bluebottle.fsm.forms import StateMachineModelFormMetaClass
+from bluebottle.segments.forms import SegmentTypeRequiredConfirmationForm
 from bluebottle.segments.models import SegmentType, Segment
 
 
@@ -123,5 +128,35 @@ class SegmentTypeAdmin(admin.ModelAdmin, DynamicArrayMixin):
 
     segments.short_description = _('Number of segments')
 
-    list_display = ['name', 'slug', 'segments', 'is_active', 'required']
-    list_editable = ['is_active', 'required']
+    list_display = [
+        'name', 'slug', 'segments', 'is_active',
+        'required', 'needs_verification'
+    ]
+    list_editable = ['is_active']
+
+    @confirmation_form(
+        SegmentTypeRequiredConfirmationForm,
+        SegmentType,
+        'admin/members/password_reset.html'
+    )
+    def mark_required(self, request, segment_type):
+        if not request.user.has_perm('segments.change_segmenttype'):
+            return HttpResponseForbidden('Not allowed to change segment type')
+
+        context = {
+            'segment_type': segment_type,
+        }
+        message = loader.render_to_string('segments/admin/segment_required_confirmation.txt', context)
+        print(message)
+        return HttpResponseRedirect(reverse('admin:segments_segmenttype', args=(segment_type.id, )))
+
+    def get_urls(self):
+        urls = super(SegmentTypeAdmin, self).get_urls()
+
+        extra_urls = [
+            url(r'^/mark_required/(?P<pk>\d+)/$',
+                self.admin_site.admin_view(self.mark_required),
+                name='segments_segmenttype_mark_required'
+                ),
+        ]
+        return extra_urls + urls

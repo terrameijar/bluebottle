@@ -39,7 +39,7 @@ class SegmentType(models.Model):
     needs_verification = models.BooleanField(
         _('Needs verification'),
         help_text=_(
-            'Users can only use the platform is they have validated the set segment for this segment type'
+            'Users can only use the platform is they have validated the set segment for this segment type.'
         ),
         default=False
     )
